@@ -20,6 +20,9 @@ __bl_classes = [
     ui.update_menu.UpdateMenu,
 
     operators.combiner.Combiner,
+    ### Sable Tweaks
+    operators.combiner.Combiner_Sable,
+    ###
     operators.combine_list.RefreshObData,
     operators.combine_list.CombineSwitch,
     operators.multicombine_list.MultiCombineColor,

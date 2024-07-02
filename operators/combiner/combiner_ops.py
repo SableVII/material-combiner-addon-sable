@@ -191,6 +191,7 @@ def _size_sorting(item: Sequence[StructureItem]) -> Tuple[int, int, int, Union[s
     elif isinstance(img_or_color, bpy.types.PackedFile):
         name_or_color = img_or_color.id_data.name
 
+    # Sorts by max size, then multiplied size, then size_x, then the name and color
     return max(size_x, size_y), size_x * size_y, size_x, name_or_color
 
 
@@ -505,3 +506,227 @@ def clear_mats(scn: Scene, mats_uv: MatsUV) -> None:
         ob = scn.objects[ob_n]
         for mat in item:
             _delete_material(ob, mat.name)
+
+
+### Sable Tweaks
+def get_data_sable(data: Sequence[bpy.types.PropertyGroup]) -> SMCObData:
+    # Ignoring layer index
+    mats = defaultdict(list) # Dictionary<object names, List<material>>
+    for item in data:
+        if item.type == globs.CL_MATERIAL:
+            mats[item.ob.name].append(item.mat)
+    return mats
+
+
+def get_mapped_materials_sable(data: Sequence[bpy.types.PropertyGroup], material_mapping: Dict) -> Dict:
+    out_dictionary = {}  # Dict<category, Dictionary<objectName, Material[]>>    ?? is the material array necessary?? idk
+
+    # Initalize categories in dictionary
+    for category_name in material_mapping:
+        out_dictionary[category_name] = {} 
+    out_dictionary["Outfit"] = {}
+
+    for item in data:
+        if item.type != globs.CL_MATERIAL:
+            continue
+
+        mat_name = item.mat.name
+        mat_name_lower = mat_name.lower()
+
+        # find what category this material is a part of, if not found, it is automatically put into the unlisted 'Outfit' category
+        found = False
+        for category_name in material_mapping:#, material_name_list in material_mapping:
+            for material_name in material_mapping[category_name]:
+                #print(mat_name_lower + " startswith " + material_name.lower() + "   matched: " + str(mat_name_lower.startswith(material_name.lower())))
+                if mat_name_lower.startswith(material_name.lower()):
+                    found = True
+                    break
+
+            if found:
+                if item.ob.name not in out_dictionary[category_name]: 
+                    out_dictionary[category_name][item.ob.name] = []
+                out_dictionary[category_name][item.ob.name].append(item.mat)
+                break
+        
+        # Add to 'Outfit' Category
+        if not found:
+            if item.ob.name not in out_dictionary["Outfit"]: 
+                out_dictionary["Outfit"][item.ob.name] = []
+            out_dictionary["Outfit"][item.ob.name].append(item.mat)
+
+    # Sort material list by name (hopefully)
+    for category_name in out_dictionary.keys():
+        for object_name in out_dictionary[category_name]:
+            out_dictionary[category_name][object_name] = sorted(out_dictionary[category_name][object_name], key=lambda mat: mat.name)
+
+    ### Debug list out all Categories!!
+    #print(out_dictionary)
+    #for category_name in out_dictionary.keys():#, object_to_mats_dict in out_dictionary:
+    #    print("Category Name: " + category_name + ":")        
+    #    for object_name in out_dictionary[category_name].keys():
+    #        print("\tObject Name: " + object_name)
+    #        for mat in out_dictionary[category_name][object_name]:#, material_list in object_to_mats_dict:
+    #            print("\t\t Material: " + mat.name)
+
+    return out_dictionary    
+
+
+# data = dictionary<objectname, materials>
+def get_structure_sable(scn: Scene, data: dict, mats_uv: MatsUV) -> Structure:
+    structure = defaultdict(lambda: {
+        'gfx': {
+            'img_or_color': None,
+            'size': (),
+            'uv_size': ()
+        },
+        'dup': [],
+        'ob': [],
+        'uv': []
+    })
+
+    for ob_n, materials in data.items():
+        ob = scn.objects[ob_n]
+        for mat in materials:
+            if mat.name not in ob.data.materials:
+                continue
+            root_mat = mat.root_mat or mat
+            if mat.root_mat and mat.name not in structure[root_mat]['dup']:
+                structure[root_mat]['dup'].append(mat.name)
+            if ob.name not in structure[root_mat]['ob']:
+                structure[root_mat]['ob'].append(ob.name)
+            structure[root_mat]['uv'].extend(mats_uv[ob_n][mat])
+    return structure
+
+
+def get_size_sable(scn: Scene, data: Structure) -> Dict:
+    for mat, item in data.items():
+        img = _get_image_sable(mat)
+        packed_file = get_packed_file(img)
+        max_x, max_y = _get_max_uv_coordinates(item['uv'])
+        item['gfx']['uv_size'] = (np.clip(max_x, 1, 25), np.clip(max_y, 1, 25))
+
+        if not scn.smc_crop:
+            item['gfx']['uv_size'] = tuple(math.ceil(x) for x in item['gfx']['uv_size'])
+
+        if packed_file:
+            img_size = _get_image_size(mat, img)
+            item['gfx']['size'] = _calculate_size(img_size, item['gfx']['uv_size'], scn.smc_gaps)
+        else:
+            item['gfx']['size'] = (scn.smc_diffuse_size + scn.smc_gaps,) * 2
+
+    return OrderedDict(sorted(data.items(), key=_size_sorting, reverse=True))
+
+
+def _get_image_sable(mat: bpy.types.Material) -> Union[bpy.types.Image, None]:
+    if globs.is_blender_2_79_or_older:
+        return get_image(get_texture(mat))
+
+    #print("GetImage: " + mat.name + " active node: " + mat.node_tree.nodes.active.type)
+
+    if mat.node_tree.nodes.active.type == 'TEX_IMAGE':
+        return mat.node_tree.nodes.active.image
+    
+    shader = get_shader_type(mat) if mat else None
+    node = mat.node_tree.nodes.get(shader_image_nodes.get(shader, ''))
+    return node.image if node else None
+
+
+def get_atlas_sable(scn: Scene, data: Structure, atlas_size: Tuple[int, int]) -> ImageType:
+    smc_size = (scn.smc_size_width, scn.smc_size_height)
+    img = Image.new('RGBA', atlas_size)
+    half_gaps = int(scn.smc_gaps / 2)
+
+    for mat, item in data.items():
+        _set_image_or_color_sable(item, mat)
+        _paste_gfx(scn, item, mat, img, half_gaps)
+
+    if scn.smc_size in ['CUST', 'STRICTCUST']:
+        img.thumbnail(smc_size, resampling)
+
+    if scn.smc_size == 'STRICTCUST':
+        canvas_img = Image.new('RGBA', smc_size)
+        canvas_img.paste(img)
+        return canvas_img
+
+    return img
+
+
+def _set_image_or_color_sable(item: StructureItem, mat: bpy.types.Material) -> None:
+    if globs.is_blender_2_80_or_newer:
+        #print("FOWOFIJS: " + mat.node_tree.nodes.active.type)
+        if mat.node_tree.nodes.active.type == 'TEX_IMAGE':
+            #print("SetImageOrColor: " + mat.name + " active node: " + mat.node_tree.nodes.active.type)
+            item['gfx']['img_or_color'] = get_packed_file(mat.node_tree.nodes.active.image)
+        else:
+            shader = get_shader_type(mat) if mat else None
+            node_name = shader_image_nodes.get(shader)
+            item['gfx']['img_or_color'] = get_packed_file(mat.node_tree.nodes.get(node_name).image) if node_name else None
+    else:
+        item['gfx']['img_or_color'] = get_packed_file(get_image(get_texture(mat)))
+
+    if not item['gfx']['img_or_color']:
+        item['gfx']['img_or_color'] = get_diffuse(mat)
+
+
+# data = dictionary<objectname, materials>
+def create_atlas_material_sable(scn: Scene, atlas: ImageType, mats_uv: MatsUV, atlasName: str, createTexture: bool) -> bpy.types.Material:
+    texture = None
+    if createTexture:
+        path = '{0}/AtlasTesting/{1}.png'.format(os.path.dirname(bpy.data.filepath), atlasName)
+        atlas.save(path)        
+        texture = _create_texture_sable(path, atlasName)
+
+    return _create_material_sable(texture, atlasName)
+
+
+def _create_texture_sable(path: str, atlasName: str) -> bpy.types.Texture:
+    texture = bpy.data.textures.new('{0}/AtlasTextures/{1}'.format(os.path.dirname(bpy.data.filepath), atlasName), 'IMAGE')
+    image = bpy.data.images.load(path)
+    texture.image = image
+    return texture
+
+
+def _create_material_sable(texture: bpy.types.Texture, atlasName: str) -> bpy.types.Material:
+    mat = bpy.data.materials.new(name='{0}'.format(atlasName))
+    if globs.is_blender_2_80_or_newer:
+        _configure_material_sable(mat, texture)
+    else:
+        _configure_material_legacy(mat, texture)
+    return mat
+
+
+def _configure_material_sable(mat: bpy.types.Material, texture: bpy.types.Texture) -> None:
+    mat.blend_method = 'CLIP'
+    mat.use_backface_culling = True
+    mat.use_nodes = True
+
+    node_texture = mat.node_tree.nodes.new(type='ShaderNodeTexImage')
+    if texture != None:
+        node_texture.image = texture.image
+    node_texture.label = 'Material Combiner Texture'
+    node_texture.location = -300, 300
+
+    mat.node_tree.links.new(node_texture.outputs['Color'],
+                            mat.node_tree.nodes['Principled BSDF'].inputs['Base Color'])
+    mat.node_tree.links.new(node_texture.outputs['Alpha'],
+                            mat.node_tree.nodes['Principled BSDF'].inputs['Alpha'])
+
+
+def assign_atlased_material_sable(scn: Scene, data: dict, atlased_material: bpy.types.Material) -> None:
+    for ob_n, materials in data.items():
+        ob = scn.objects[ob_n]
+        ob_materials = ob.data.materials
+        #_assign_mats(item, comb_mats, ob_materials)
+        ob_materials.append(atlased_material)
+        _assign_material_to_polys_sable(materials, atlased_material.name, ob, ob_materials)
+
+
+def _assign_material_to_polys_sable(materials: list, atlased_material_name: str, ob: bpy.types.Object, ob_materials: ObMats) -> None:
+    for idx, polys in get_polys(ob).items():
+        if ob_materials[idx] not in materials:
+            continue
+        
+        mat_idx = ob_materials.find(atlased_material_name)
+        for poly in polys:
+            poly.material_index = mat_idx
+###

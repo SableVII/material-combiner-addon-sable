@@ -130,6 +130,69 @@ def register() -> None:
         default='',
     )
 
+    ### Sable Tweaks
+    bpy.types.Scene.smc_sable_outfit_texture_name = StringProperty(
+        description='The name of the generated Outfit texture',
+        default='',
+    )  
+    bpy.types.Scene.smc_sable_create_outfit_texture = BoolProperty(
+        name='Create Outfit Texture',
+        description='Create Outfit atlased texture',
+        default=False,
+    )        
+    bpy.types.Scene.smc_sable_body_texture_name = StringProperty(
+        description='The name of the generated Body atlased texture',
+        default='',
+    )
+    bpy.types.Scene.smc_sable_create_body_texture = BoolProperty(
+        name='Create Body Texture',
+        description='Create Body atlased texture',
+        default=False,
+    )    
+    bpy.types.Scene.smc_sable_blushables_texture_name = StringProperty(
+        description='The name of the generated Blushables atlased texture',
+        default='',
+    )
+    bpy.types.Scene.smc_sable_create_blushables_texture = BoolProperty(
+        name='Create Blushables Texture',
+        description='Create Blushables atlased texture',
+        default=False,
+    )    
+    bpy.types.Scene.smc_sable_transparents_texture_name = StringProperty(
+        description='The name of the generated Transparents atlased texture',
+        default='',
+    )
+    bpy.types.Scene.smc_sable_create_transparents_texture = BoolProperty(
+        name='Create Transparents Texture',
+        description='Create Transparents atlased texture',
+        default=False,
+    )    
+    bpy.types.Scene.smc_sable_emissive_texture_name = StringProperty(
+        description='The name of the generated Emissive/Emission atlased texture',
+        default='',
+    )
+    bpy.types.Scene.smc_sable_create_emissive_texture = BoolProperty(
+        name='Create Emissive Texture',
+        description='Create Emissive atlased texture',
+        default=False,
+    )   
+    bpy.types.Scene.smc_sable_emotes_texture_name = StringProperty(
+        description='The name of the generated Emotes atlased texture',
+        default='',
+    )
+    bpy.types.Scene.smc_sable_create_emotes_texture = BoolProperty(
+        name='Create Emotes Texture',
+        description='Create Emotes atlased texture',
+        default=False,
+    )
+
+    bpy.types.Scene.smc_sable_merge_by_distance_weight = FloatProperty(
+        name='Merge by Distance Weight',
+        description='Merge by Distance Weight. Set to 0 if no merging is wanted',
+        default=0.00005,
+    )
+    ###
+
     bpy.types.Material.root_mat = PointerProperty(
         name='Material Root',
         type=bpy.types.Material,
@@ -175,6 +238,23 @@ def unregister() -> None:
     del bpy.types.Scene.smc_diffuse_size
     del bpy.types.Scene.smc_gaps
     del bpy.types.Scene.smc_save_path
+
+    ### Sable Tweaks
+    del bpy.types.Scene.smc_sable_outfit_texture_name
+    del bpy.types.Scene.smc_sable_body_texture_name
+    del bpy.types.Scene.smc_sable_blushables_texture_name
+    del bpy.types.Scene.smc_sable_transparents_texture_name
+    del bpy.types.Scene.smc_sable_emissive_texture_name
+    del bpy.types.Scene.smc_sable_emotes_texture_name
+    del bpy.types.Scene.smc_sable_create_outfit_texture
+    del bpy.types.Scene.smc_sable_create_body_texture
+    del bpy.types.Scene.smc_sable_create_blushables_texture
+    del bpy.types.Scene.smc_sable_create_transparents_texture
+    del bpy.types.Scene.smc_sable_create_emissive_texture
+    del bpy.types.Scene.smc_sable_create_emotes_texture
+
+    del bpy.types.Scene.smc_sable_merge_by_distance_weight
+    ###
 
     del bpy.types.Material.root_mat
     del bpy.types.Material.smc_diffuse
