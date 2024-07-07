@@ -145,6 +145,8 @@ class Combiner_Sable(bpy.types.Operator):
         #scn.smc_size = 'PO2'
         #scn.smc_gaps = 0
 
+        set_ob_mode(context.view_layer if globs.is_blender_2_80_or_newer else scn, scn.smc_ob_data)
+
         # Merge by distance
         if scn.smc_sable_merge_by_distance_weight >= 0.0:
             bpy.ops.object.mode_set(mode='EDIT')
@@ -234,21 +236,20 @@ class Combiner_Sable(bpy.types.Operator):
                     # TODO: Be on the lookout for shapekeys that have the same name. Need to merge them
 
         # Handle deleting [X] marked bones
-        armature = None
-        for item in scn.smc_ob_data:
-            if item.type == globs.CL_OBJECT:
-                armature = item.ob.find_armature()
+        bpy.ops.object.mode_set(mode='EDIT')
+        armature = bpy.data.armatures["Armature"] 
 
-        if armature:
-                bpy.context.view_layer.objects.active = armature
-                bpy.ops.object.mode_set(mode='EDIT')
-        
-                for bone in armature.data.bones:
-                    if bone.name.endswith(" [X]"):
-                        armature.data.bones.active = bone
-                        bone.select = True
-                        bpy.ops.armature.delete()
-                        print("Removed Bone: " + bone.name)
+        index = 0
+        while index < len(armature.edit_bones):
+            bone = armature.edit_bones[index]
+            if bone.name.endswith(" [X]"):
+                boneName = bone.name
+                armature.edit_bones.remove(bone)
+                print("Removed Bone: " + boneName)
+                
+                # Don't increment loop index cuz of removed bone
+                continue
+            index += 1
 
         set_ob_mode(context.view_layer if globs.is_blender_2_80_or_newer else scn, scn.smc_ob_data)
 
