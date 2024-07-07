@@ -672,7 +672,7 @@ def _set_image_or_color_sable(item: StructureItem, mat: bpy.types.Material) -> N
 def create_atlas_material_sable(scn: Scene, atlas: ImageType, mats_uv: MatsUV, atlasName: str, createTexture: bool) -> bpy.types.Material:
     texture = None
     if createTexture:
-        path = '{0}/AtlasTesting/{1}.png'.format(os.path.dirname(bpy.data.filepath), atlasName)
+        path = '{0}/AtlasedTextures/{1}.png'.format(os.path.dirname(bpy.data.filepath), atlasName)
         atlas.save(path)        
         texture = _create_texture_sable(path, atlasName)
 
@@ -680,7 +680,7 @@ def create_atlas_material_sable(scn: Scene, atlas: ImageType, mats_uv: MatsUV, a
 
 
 def _create_texture_sable(path: str, atlasName: str) -> bpy.types.Texture:
-    texture = bpy.data.textures.new('{0}/AtlasTextures/{1}'.format(os.path.dirname(bpy.data.filepath), atlasName), 'IMAGE')
+    texture = bpy.data.textures.new('{0}/AtlasedTextures/{1}'.format(os.path.dirname(bpy.data.filepath), atlasName), 'IMAGE')
     image = bpy.data.images.load(path)
     texture.image = image
     return texture
