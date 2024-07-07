@@ -153,6 +153,105 @@ class Combiner_Sable(bpy.types.Operator):
             bpy.ops.mesh.select_all(action='DESELECT')
 
         set_ob_mode(context.view_layer if globs.is_blender_2_80_or_newer else scn, scn.smc_ob_data)
+
+        # Handle shapkey cleanup
+        for item in scn.smc_ob_data:
+            if item.type == globs.CL_OBJECT:
+                print("Object Found: " + item.ob.name)
+
+                shapekeys = item.ob.data.shape_keys
+
+                print("Shapkeys: " + str(shapekeys))
+                keyblocks = shapekeys.key_blocks
+                
+                # Clear any and all keyblock values and vgroups
+                index = 0
+                while index < len(keyblocks):
+                    keyblock = keyblocks[index]
+                    keyblock.value = 0
+                    keyblock.vertex_group = ""
+
+                    index += 1
+
+                index = 0
+                while index < len(keyblocks):
+                    keyblock = keyblocks[index]
+                    keyblock_name = keyblock.name
+
+                    print("Keyblock Name: " + keyblock_name)
+
+                    if keyblock_name.endswith(" [X]"):
+                        #item.ob.active_shape_key_index = index
+                        item.ob.shape_key_remove(keyblock)
+                        print("Removed Shapekey: " + keyblock_name)
+                        
+                        # Don't increase loop index cuz of removed shapkey
+                        continue
+
+                    if keyblock_name.endswith(" [M]"):
+                        # Duplicate Shapekey, mirror the current shapekey, rename current to right variant, set duplicated shapekey's name to the original name
+
+                        item.ob.active_shape_key_index = index
+
+                        new_keyblock_name = keyblock_name[0:-4] # trim
+
+                        keyblock.name = new_keyblock_name.replace("Left", "Right")
+
+                        keyblock.value = 1
+
+                        item.ob.shape_key_add(name=new_keyblock_name, from_mix=True)
+
+                        keyblock.value = 0
+
+                        bpy.ops.object.shape_key_mirror()
+                        print("Mirrored Shapekey: " + new_keyblock_name + " into " + keyblock.name + " and " + new_keyblock_name)
+
+                        # Move selected shapekey down to bottom of list
+                        bpy.ops.object.shape_key_move(type='BOTTOM')                  
+
+                        # Don't increase loop index cuz we moved the shapekey to the end of the array
+                        continue
+
+                    if keyblock_name.endswith(" [S]"):
+                        new_keyblock_name = keyblock_name[0:-4] # trim
+
+                        keyblock.value = 1
+                        keyblock.vertex_group = "HeadLeftSide Smoothed [X]"
+                        item.ob.shape_key_add(name=new_keyblock_name + "Left", from_mix=True)
+                        keyblock.vertex_group = "HeadRightSide Smoothed [X]"                        
+                        item.ob.shape_key_add(name=new_keyblock_name + "Right", from_mix=True)
+                        keyblock.value = 0
+
+                        item.ob.shape_key_remove(keyblock)
+
+                        print("Split Shapekey: " + keyblock_name + " into " + new_keyblock_name + "Left" + new_keyblock_name + "Right. Removed split source: " + new_keyblock_name)
+                        
+                        # Don't increase loop index cuz of removed shapkey
+                        continue
+
+                   
+                    index += 1 
+                    # TODO: Be on the lookout for shapekeys that have the same name. Need to merge them
+
+        # Handle deleting [X] marked bones
+        armature = None
+        for item in scn.smc_ob_data:
+            if item.type == globs.CL_OBJECT:
+                armature = item.ob.find_armature()
+
+        if armature:
+                bpy.context.view_layer.objects.active = armature
+                bpy.ops.object.mode_set(mode='EDIT')
+        
+                for bone in armature.data.bones:
+                    if bone.name.endswith(" [X]"):
+                        armature.data.bones.active = bone
+                        bone.select = True
+                        bpy.ops.armature.delete()
+                        print("Removed Bone: " + bone.name)
+
+        set_ob_mode(context.view_layer if globs.is_blender_2_80_or_newer else scn, scn.smc_ob_data)
+
         #self.data = get_data_sable(scn.smc_ob_data)
         #self.mats_uv = get_mats_uv(scn, self.data)
         #clear_empty_mats(scn, self.data, self.mats_uv)
