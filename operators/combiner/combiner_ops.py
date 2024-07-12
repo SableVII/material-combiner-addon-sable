@@ -543,6 +543,12 @@ def get_mapped_materials_sable(data: Sequence[bpy.types.PropertyGroup], material
                     break
 
             if found:
+                if category_name != "Outfit": # Make sure its not already an Outfit category
+                    for material_name in material_mapping["Outfit"]:
+                        if mat_name_lower.startswith(material_name.lower()): # Check to make sure found item does not exist in the forced Outfit category list, if it does, don't add to the found category
+                            found = False
+                            break
+
                 if item.ob.name not in out_dictionary[category_name]: 
                     out_dictionary[category_name][item.ob.name] = []
                 out_dictionary[category_name][item.ob.name].append(item.mat)

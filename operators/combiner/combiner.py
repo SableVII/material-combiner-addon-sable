@@ -91,8 +91,9 @@ class Combiner_Sable(bpy.types.Operator):
     errors = ""
 
     sableMaterialMap = {
-        "Body" : ["Body", "Mouth"]
-        , "Transparents" : ["Sunglasses", "FaceTransparents"]        
+        "Outfit" : ["HairClip"] # Forced Outfit Material names. Others types must not match against anything in this first before adding it to its type
+        , "Body" : ["Body", "Mouth"]
+        , "Transparents" : ["SunglassesLens", "FaceTransparents"]        
         , "Blushables" : ["Face", "Ears", "SableFerretEar"]
         , "Emissives" : ["Eyes", "Cellphone", "Hair"]
         , "Emotes" : ["Emotes"]
@@ -214,7 +215,7 @@ class Combiner_Sable(bpy.types.Operator):
                         # Don't increase loop index cuz we moved the shapekey to the end of the array
                         continue
 
-                    if keyblock_name.endswith(" [S]"):
+                    if keyblock_name.endswith(" [H]"):
                         new_keyblock_name = keyblock_name[0:-4] # trim
 
                         keyblock.value = 1
@@ -231,26 +232,61 @@ class Combiner_Sable(bpy.types.Operator):
                         # Don't increase loop index cuz of removed shapkey
                         continue
 
+                    if keyblock_name.endswith(" [V]"):
+                        new_keyblock_name = keyblock_name[0:-4] # trim
+
+                        keyblock.value = 1
+                        keyblock.vertex_group = "UpperMouthMask Smoothed [X]"
+                        item.ob.shape_key_add(name=new_keyblock_name + "Upper", from_mix=True)
+                        keyblock.vertex_group = "LowerMouthMask Smoothed [X]"                        
+                        item.ob.shape_key_add(name=new_keyblock_name + "Lower", from_mix=True)
+                        keyblock.value = 0
+
+                        item.ob.shape_key_remove(keyblock)
+
+                        print("Split Shapekey: " + keyblock_name + " into " + new_keyblock_name + "Upper" + new_keyblock_name + "Lower. Removed split source: " + new_keyblock_name)
+                        
+                        # Don't increase loop index cuz of removed shapkey
+                        continue                    
+
                    
                     index += 1 
                     # TODO: Be on the lookout for shapekeys that have the same name. Need to merge them
 
         # Handle deleting [X] marked bones
-        bpy.ops.object.mode_set(mode='EDIT')
-        armature = bpy.data.armatures["Armature"] 
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.ops.object.select_all(action='DESELECT')
+        
+        # Need to switch into Edit mode with just the Armature's object selected
+        armatureObject = None
+        armature = None
+        try:
+            armatureObject = bpy.data.objects["Armature"]
 
-        index = 0
-        while index < len(armature.edit_bones):
-            bone = armature.edit_bones[index]
-            if bone.name.endswith(" [X]"):
-                boneName = bone.name
-                armature.edit_bones.remove(bone)
-                print("Removed Bone: " + boneName)
-                
-                # Don't increment loop index cuz of removed bone
-                continue
-            index += 1
+            if armatureObject.type == 'ARMATURE':
+                armature = armatureObject.data
+        except KeyError:
+            print("Armature of name 'Armature' was not found")
 
+        if armature != None:
+            armatureObject.select_set(True)
+            bpy.context.view_layer.objects.active = armatureObject
+            bpy.ops.object.mode_set(mode='EDIT')
+
+            index = 0
+            while index < len(armature.edit_bones):
+                bone = armature.edit_bones[index]
+                #print("Checking for Bone: " + bone.name)
+                if bone.name.endswith(" [X]"):
+                    boneName = bone.name
+                    armature.edit_bones.remove(bone)
+                    print("Removed Bone: " + boneName)
+                    
+                    # Don't increment loop index cuz of removed bone
+                    continue
+                index += 1
+
+            armatureObject.update_from_editmode()
         set_ob_mode(context.view_layer if globs.is_blender_2_80_or_newer else scn, scn.smc_ob_data)
 
         #self.data = get_data_sable(scn.smc_ob_data)
