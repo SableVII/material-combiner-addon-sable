@@ -1,2 +1,4 @@
 -Add error message for missing texture pulled from material
 -Use separate external file to handle what texture goes where (If i can)
+-Split Eyes and Emissives texture into both Emissive and Emission Textures (If Possible)
+-Split Blushables into both Base and Emission textures on export (If Possible)

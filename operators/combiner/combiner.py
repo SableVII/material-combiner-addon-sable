@@ -91,9 +91,9 @@ class Combiner_Sable(bpy.types.Operator):
     errors = ""
 
     sableMaterialMap = {
-        "Outfit" : ["HairClip"] # Forced Outfit Material names. Others types must not match against anything in this first before adding it to its type
+        "Outfit" : ["HairClip", "FaceEyebrows"] # Forced Outfit Material names. Others types must not match against anything in this first before adding it to its type
         , "Body" : ["Body", "Mouth"]
-        , "Transparents" : ["SunglassesLens", "FaceTransparents"]        
+        , "Transparents" : ["EyeReflections", "SunglassesLens", "FaceTransparents", "SwimmingGreenFrills"]        
         , "Blushables" : ["Face", "Ears", "SableFerretEar"]
         , "Emissives" : ["Eyes", "Cellphone", "Hair"]
         , "Emotes" : ["Emotes"]
@@ -337,7 +337,7 @@ class Combiner_Sable(bpy.types.Operator):
                 continue
 
             atlas = get_atlas_sable(scn, fittedStructure, atlas_size)
-            align_uvs(scn, fittedStructure, atlas.size, size)
+            align_uvs_sable(scn, fittedStructure, atlas_name, atlas.size, size)
             atlas_material = create_atlas_material_sable(scn, atlas, self.mats_uv, atlas_name, create_atlas)
             assign_atlased_material_sable(scn, current_materials, atlas_material)
 

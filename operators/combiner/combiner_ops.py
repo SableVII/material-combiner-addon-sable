@@ -508,7 +508,21 @@ def clear_mats(scn: Scene, mats_uv: MatsUV) -> None:
             _delete_material(ob, mat.name)
 
 
+
+
 ### Sable Tweaks
+def get_mats_uv_sable(scn: Scene, data: SMCObData) -> MatsUV:
+    mats_uv = defaultdict(lambda: defaultdict(list))
+    for ob_n, item in data.items():
+        ob = scn.objects[ob_n]
+        for idx, polys in get_polys(ob).items():
+            mat = ob.data.materials[idx]
+            if mat not in item:
+                continue
+            for poly in polys:
+                mats_uv[ob_n][mat].extend(get_uv(ob, poly))
+    return mats_uv
+
 def get_data_sable(data: Sequence[bpy.types.PropertyGroup]) -> SMCObData:
     # Ignoring layer index
     mats = defaultdict(list) # Dictionary<object names, List<material>>
@@ -735,4 +749,27 @@ def _assign_material_to_polys_sable(materials: list, atlased_material_name: str,
         mat_idx = ob_materials.find(atlased_material_name)
         for poly in polys:
             poly.material_index = mat_idx
+
+def align_uvs_sable(scn: Scene, data: Structure, temp_atlas_name: str, atlas_size: Tuple[int, int], size: Tuple[int, int]) -> None:
+    size_width, size_height = size
+
+    scaled_width, scaled_height = _get_scale_factors(atlas_size, size)
+
+    for item in data.values():
+        gfx_size = item['gfx']['size']
+        gfx_height = gfx_size[1]
+
+        gfx_width_margin, gfx_height_margin = (x for x in gfx_size)
+
+        uv_width, uv_height = item['gfx']['uv_size']
+
+        for uv in item['uv']:
+            reset_x = uv.x / uv_width * gfx_width_margin
+            reset_y = uv.y / uv_height * gfx_height_margin - gfx_height
+
+            uv_x = (reset_x + item['gfx']['fit']['x']) / size_width
+            uv_y = (reset_y - item['gfx']['fit']['y']) / size_height
+
+            uv.x = uv_x * scaled_width
+            uv.y = uv_y * scaled_height + 1  
 ###
