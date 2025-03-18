@@ -93,10 +93,18 @@ class Combiner_Sable(bpy.types.Operator):
     sableMaterialMap = {
         "Outfit" : ["HairClip", "FaceEyebrows"] # Forced Outfit Material names. Others types must not match against anything in this first before adding it to its type
         , "Body" : ["Body", "Mouth"]
-        , "Transparents" : ["EyeReflections", "SunglassesLens", "FaceTransparents", "SwimmingGreenFrills"]        
-        , "Blushables" : ["Face", "Ears", "SableFerretEar"]
-        , "Emissives" : ["Eyes", "Cellphone", "Hair"]
+        , "Transparents" : ["EyeReflections", "SunglassesLens", "FaceTransparents", "Tears"]        
+        , "Blushables" : ["Face", "Ears", "SableFerretEar", "SableEars"]
+        , "Emissives" : ["Eyes", "Cellphone", "Hair", "EyeBackRefraction"]
         , "Emotes" : ["Emotes"]
+    }
+
+
+    sableSeperateMaterialsMap = {
+        "Shorts" : ["ShortsBand", "ShortsSecondary", "Shorts"],     # make sure to keep short names like 'Short' at the end to avoid double hits in search later
+        "TShirt" : ["TShirtFront", "TShirtBack"],
+        "Bra" : ["Bra"],
+        "Panties" : ["Panties"]
     }
 
     def type_to_output_name_sable(self, scn: bpy.types.Context, type_name: str) -> str:
@@ -156,6 +164,9 @@ class Combiner_Sable(bpy.types.Operator):
             bpy.ops.mesh.select_all(action='DESELECT')
 
         set_ob_mode(context.view_layer if globs.is_blender_2_80_or_newer else scn, scn.smc_ob_data)
+
+        fileName = bpy.path.basename(bpy.context.blend_data.filepath)
+        fileIsTest = fileName.startswith("Test")
 
         # Handle shapkey cleanup
         for item in scn.smc_ob_data:
@@ -247,11 +258,57 @@ class Combiner_Sable(bpy.types.Operator):
                         print("Split Shapekey: " + keyblock_name + " into " + new_keyblock_name + "Upper" + new_keyblock_name + "Lower. Removed split source: " + new_keyblock_name)
                         
                         # Don't increase loop index cuz of removed shapkey
-                        continue                    
+                        continue
+
+                    if keyblock_name.endswith(" [Test]") and not fileIsTest:
+                        item.ob.shape_key_remove(keyblock)
+
+                        print("Removed Shapekey: " + keyblock_name + " as this project isn't a Test file")
+
+                        # Don't increase loop index cuz of removed shapkey
+                        continue
 
                    
                     index += 1 
                     # TODO: Be on the lookout for shapekeys that have the same name. Need to merge them
+
+
+                # Seperate specific materials from the Body when executing operation on a Test named project
+                '''if fileIsTest:
+                    #index = 0
+                    seperationNames = list(self.sableSeperateMaterialsMap.keys())
+                    
+                    materialsToMerge = {} # { MergedName : [list of materials to combine ]}
+                    
+                    for material in item.ob.data.materials:
+                    #while (index < len(item.ob.data.materials)):
+                        
+                        found = False
+                        for key in seperationNames:
+                            for expectedMaterialName in self.sableSeperateMaterialsMap[key]:
+                                if material.name.startswith(expectedMaterialName):
+                                    #print("Should be combining " + material.name + " into combined material: " + key)
+                                    
+                                    if key not in materialsToMerge:
+                                        materialsToMerge[key] = [material]
+                                        print("Created new materialsToMerge key: " + key + " and added material: " + material.name)
+                                    else:
+                                        materialsToMerge[key].append(material)
+                                        print("Appened material materialsToMerge key: " + key + " with material: " + material.name)                                        
+                                    found = True
+                                    break
+                            
+                            if found:
+                                break
+
+                    # Debug      
+                    for key in list(materialsToMerge.keys()):
+                        print("[Material Key: " + key + "]")                        
+                        for material in materialsToMerge[key]:                            
+                            print("\tMaterial Name: " +  material.name)
+
+                        #index += 1'''
+            
 
         # Handle deleting [X] marked bones
         bpy.ops.object.mode_set(mode='OBJECT')
