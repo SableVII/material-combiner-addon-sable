@@ -91,14 +91,22 @@ class Combiner_Sable(bpy.types.Operator):
     errors = ""
 
     sableMaterialMap = {
+        "Outfit" : ["HairClip"] # Forced Outfit Material names. Others types must not match against anything in this first before adding it to its type
+        , "Body" : ["Body", "Mouth", "Face", "EyebrowsEyelashes", "ToeNails", "FingerNails"]
+        , "Hair" : ["Hair", "SableFerretEar", "SableEars", "SableTail"]
+        , "Eyes" : ["Eyes"]        
+        , "Emissives" : ["Cellphone", "Emotes"]
+        , "Transparents" : ["EyeTransparents", "SunglassesLens", "Tears"]          
+    }
+
+    '''sableMaterialMap = {
         "Outfit" : ["HairClip", "FaceEyebrows"] # Forced Outfit Material names. Others types must not match against anything in this first before adding it to its type
         , "Body" : ["Body", "Mouth"]
         , "Transparents" : ["EyeReflections", "SunglassesLens", "FaceTransparents", "Tears"]        
         , "Blushables" : ["Face", "Ears", "SableFerretEar", "SableEars"]
         , "Emissives" : ["Eyes", "Cellphone", "Hair", "EyeBackRefraction"]
         , "Emotes" : ["Emotes"]
-    }
-
+    }'''
 
     sableSeperateMaterialsMap = {
         "Shorts" : ["ShortsBand", "ShortsSecondary", "Shorts"],     # make sure to keep short names like 'Short' at the end to avoid double hits in search later
@@ -111,17 +119,17 @@ class Combiner_Sable(bpy.types.Operator):
         if (type_name == "Body"):
             return str(scn.smc_sable_body_texture_name).strip()
     
-        if (type_name == "Blushables"):
-            return str(scn.smc_sable_blushables_texture_name).strip()
+        if (type_name == "Hair"):
+            return str(scn.smc_sable_hair_texture_name).strip()
     
-        if (type_name == "Transparents"):
-            return str(scn.smc_sable_transparents_texture_name).strip()
-    
+        if (type_name == "Eyes"):
+            return str(scn.smc_sable_eyes_texture_name).strip()
+
         if (type_name == "Emissives"):
             return str(scn.smc_sable_emissive_texture_name).strip()
-    
-        if (type_name == "Emotes"):
-            return str(scn.smc_sable_emotes_texture_name).strip()
+
+        if (type_name == "Transparents"):
+            return str(scn.smc_sable_transparents_texture_name).strip()
 
         return str(scn.smc_sable_outfit_texture_name).strip()
     
@@ -129,17 +137,17 @@ class Combiner_Sable(bpy.types.Operator):
         if (type_name == "Body"):
             return scn.smc_sable_create_body_texture
     
-        if (type_name == "Blushables"):
-            return scn.smc_sable_create_blushables_texture
+        if (type_name == "Hair"):
+            return scn.smc_sable_create_hair_texture
     
-        if (type_name == "Transparents"):
-            return scn.smc_sable_create_transparents_texture
-    
+        if (type_name == "Eyes"):
+            return scn.smc_sable_create_eyes_texture
+
         if (type_name == "Emissives"):
             return scn.smc_sable_create_emissive_texture
-    
-        if (type_name == "Emotes"):
-            return scn.smc_sable_create_emotes_texture
+        
+        if (type_name == "Transparents"):
+            return scn.smc_sable_create_transparents_texture        
 
         return scn.smc_sable_create_outfit_texture        
 

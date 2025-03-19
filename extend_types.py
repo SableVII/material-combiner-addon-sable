@@ -134,7 +134,7 @@ def register() -> None:
     bpy.types.Scene.smc_sable_outfit_texture_name = StringProperty(
         description='The name of the generated Outfit texture',
         default='',
-    )  
+    )
     bpy.types.Scene.smc_sable_create_outfit_texture = BoolProperty(
         name='Create Outfit Texture',
         description='Create Outfit atlased texture',
@@ -148,25 +148,25 @@ def register() -> None:
         name='Create Body Texture',
         description='Create Body atlased texture',
         default=False,
-    )    
-    bpy.types.Scene.smc_sable_blushables_texture_name = StringProperty(
-        description='The name of the generated Blushables atlased texture',
+    )
+    bpy.types.Scene.smc_sable_hair_texture_name = StringProperty(
+        description='The name of the generated Hair atlased texture',
         default='',
     )
-    bpy.types.Scene.smc_sable_create_blushables_texture = BoolProperty(
-        name='Create Blushables Texture',
-        description='Create Blushables atlased texture',
+    bpy.types.Scene.smc_sable_create_hair_texture = BoolProperty(
+        name='Create Hair Texture',
+        description='Create Hair atlased texture',
         default=False,
-    )    
-    bpy.types.Scene.smc_sable_transparents_texture_name = StringProperty(
-        description='The name of the generated Transparents atlased texture',
+    )
+    bpy.types.Scene.smc_sable_eyes_texture_name = StringProperty(
+        description='The name of the generated Eyes atlased texture',
         default='',
     )
-    bpy.types.Scene.smc_sable_create_transparents_texture = BoolProperty(
-        name='Create Transparents Texture',
-        description='Create Transparents atlased texture',
+    bpy.types.Scene.smc_sable_create_eyes_texture = BoolProperty(
+        name='Create Eyes Texture',
+        description='Create Eyes atlased texture',
         default=False,
-    )    
+    )
     bpy.types.Scene.smc_sable_emissive_texture_name = StringProperty(
         description='The name of the generated Emissive/Emission atlased texture',
         default='',
@@ -175,14 +175,14 @@ def register() -> None:
         name='Create Emissive Texture',
         description='Create Emissive atlased texture',
         default=False,
-    )   
-    bpy.types.Scene.smc_sable_emotes_texture_name = StringProperty(
-        description='The name of the generated Emotes atlased texture',
+    )
+    bpy.types.Scene.smc_sable_transparents_texture_name = StringProperty(
+        description='The name of the generated Transparents atlased texture',
         default='',
     )
-    bpy.types.Scene.smc_sable_create_emotes_texture = BoolProperty(
-        name='Create Emotes Texture',
-        description='Create Emotes atlased texture',
+    bpy.types.Scene.smc_sable_create_transparents_texture = BoolProperty(
+        name='Create Transparents Texture',
+        description='Create Transparents atlased texture',
         default=False,
     )
 
@@ -242,16 +242,16 @@ def unregister() -> None:
     ### Sable Tweaks
     del bpy.types.Scene.smc_sable_outfit_texture_name
     del bpy.types.Scene.smc_sable_body_texture_name
-    del bpy.types.Scene.smc_sable_blushables_texture_name
-    del bpy.types.Scene.smc_sable_transparents_texture_name
+    del bpy.types.Scene.smc_sable_hair_texture_name
+    del bpy.types.Scene.smc_sable_eyes_texture_name    
     del bpy.types.Scene.smc_sable_emissive_texture_name
-    del bpy.types.Scene.smc_sable_emotes_texture_name
+    del bpy.types.Scene.smc_sable_transparents_texture_name
     del bpy.types.Scene.smc_sable_create_outfit_texture
     del bpy.types.Scene.smc_sable_create_body_texture
-    del bpy.types.Scene.smc_sable_create_blushables_texture
-    del bpy.types.Scene.smc_sable_create_transparents_texture
+    del bpy.types.Scene.smc_sable_create_hair_texture
+    del bpy.types.Scene.smc_sable_create_eyes_texture    
     del bpy.types.Scene.smc_sable_create_emissive_texture
-    del bpy.types.Scene.smc_sable_create_emotes_texture
+    del bpy.types.Scene.smc_sable_create_transparents_texture    
 
     del bpy.types.Scene.smc_sable_merge_by_distance_weight
     ###
