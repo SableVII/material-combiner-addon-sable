@@ -94,9 +94,9 @@ class Combiner_Sable(bpy.types.Operator):
         "Outfit" : ["HairClip"] # Forced Outfit Material names. Others types must not match against anything in this first before adding it to its type
         , "Body" : ["Body", "Mouth", "Face", "EyebrowsEyelashes", "ToeNails", "FingerNails"]
         , "Hair" : ["Hair", "SableFerretEar", "SableEars", "SableTail"]
-        , "Eyes" : ["Eyes"]        
-        , "Emissives" : ["Cellphone", "Emotes"]
-        , "Transparents" : ["EyeTransparents", "SunglassesLens", "Tears"]          
+        , "Eye Reflections" : ["EyeReflections"]
+        , "Emissives" : ["Cellphone", "Emotes", "Eyes"]
+        , "Transparents" : ["SunglassesLens", "Tears", "FacialTransparents", "Mess"]
     }
 
     '''sableMaterialMap = {
@@ -115,6 +115,14 @@ class Combiner_Sable(bpy.types.Operator):
         "Panties" : ["Panties"]
     }
 
+    #sableIgnoreMaterials = [
+    #    "VolleyballJersey"
+    #]
+    
+    sableSeperateMeshedMaterials = [
+        "VolleyballJersey"
+    ]
+
     def type_to_output_name_sable(self, scn: bpy.types.Context, type_name: str) -> str:
         if (type_name == "Body"):
             return str(scn.smc_sable_body_texture_name).strip()
@@ -122,11 +130,11 @@ class Combiner_Sable(bpy.types.Operator):
         if (type_name == "Hair"):
             return str(scn.smc_sable_hair_texture_name).strip()
     
-        if (type_name == "Eyes"):
-            return str(scn.smc_sable_eyes_texture_name).strip()
+        if (type_name == "Eye Reflections"):
+            return str(scn.smc_sable_eyereflections_texture_name).strip()
 
         if (type_name == "Emissives"):
-            return str(scn.smc_sable_emissive_texture_name).strip()
+            return str(scn.smc_sable_emissives_texture_name).strip()
 
         if (type_name == "Transparents"):
             return str(scn.smc_sable_transparents_texture_name).strip()
@@ -140,11 +148,11 @@ class Combiner_Sable(bpy.types.Operator):
         if (type_name == "Hair"):
             return scn.smc_sable_create_hair_texture
     
-        if (type_name == "Eyes"):
-            return scn.smc_sable_create_eyes_texture
+        if (type_name == "Eye Reflections"):
+            return scn.smc_sable_create_eyereflections_texture
 
         if (type_name == "Emissives"):
-            return scn.smc_sable_create_emissive_texture
+            return scn.smc_sable_create_emissives_texture
         
         if (type_name == "Transparents"):
             return scn.smc_sable_create_transparents_texture        
@@ -179,11 +187,11 @@ class Combiner_Sable(bpy.types.Operator):
         # Handle shapkey cleanup
         for item in scn.smc_ob_data:
             if item.type == globs.CL_OBJECT:
-                print("Object Found: " + item.ob.name)
+                #print("Object Found: " + item.ob.name)
 
                 shapekeys = item.ob.data.shape_keys
 
-                print("Shapkeys: " + str(shapekeys))
+                #print("Shapkeys: " + str(shapekeys))
                 keyblocks = shapekeys.key_blocks
                 
                 # Clear any and all keyblock values and vgroups
@@ -200,7 +208,7 @@ class Combiner_Sable(bpy.types.Operator):
                     keyblock = keyblocks[index]
                     keyblock_name = keyblock.name
 
-                    print("Keyblock Name: " + keyblock_name)
+                    #print("Keyblock Name: " + keyblock_name)
 
                     if keyblock_name.endswith(" [X]"):
                         #item.ob.active_shape_key_index = index
@@ -370,12 +378,15 @@ class Combiner_Sable(bpy.types.Operator):
         self.mats_uv = get_mats_uv(scn, self.data)
 
         #print(self.sableMaterialMap)
-        mapped_materials = get_mapped_materials_sable(scn.smc_ob_data, self.sableMaterialMap)
+        mapped_materials = get_mapped_materials_sable(scn.smc_ob_data, self.sableMaterialMap, self.sableSeperateMeshedMaterials)
 
         for current_category, current_materials in mapped_materials.items(): 
             # Note: current_materials is a Dict with key as a gameobject to a list of materials
 
             if not current_materials: # is empty, this is totally normal if no materials are in one of this category
+                continue
+
+            if current_category not in self.sableMaterialMap: # material category is not apart of the hard-coded ones, don't make atlas with them
                 continue
 
             atlas_name = self.type_to_output_name_sable(scn, current_category)
@@ -409,8 +420,18 @@ class Combiner_Sable(bpy.types.Operator):
             #self.report({'INFO'}, 'Merged ' + current_category + ' materials and created ' + atlas_name + '!')
             print('Merged ' + current_category + ' materials and created ' + atlas_name + '!')
 
-        clear_mats(scn, self.mats_uv)
+        clear_mats_sable(scn, self.mats_uv, self.sableSeperateMeshedMaterials)
         bpy.ops.smc.refresh_ob_data()
+
+        organize_materials_sable(scn)
+
+        bpy.ops.smc.refresh_ob_data()
+
+        # Sort verticies by its material so Unity will organize its material list predictably
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_all(action='SELECT')
+        bpy.ops.mesh.sort_elements(type='MATERIAL')
+        bpy.ops.mesh.select_all(action='DESELECT')
 
         if errors:
             self.report({'ERROR'}, errors)

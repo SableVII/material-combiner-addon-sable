@@ -532,7 +532,7 @@ def get_data_sable(data: Sequence[bpy.types.PropertyGroup]) -> SMCObData:
     return mats
 
 
-def get_mapped_materials_sable(data: Sequence[bpy.types.PropertyGroup], material_mapping: Dict) -> Dict:
+def get_mapped_materials_sable(data: Sequence[bpy.types.PropertyGroup], material_mapping: Dict, seperateMaterials: List) -> Dict:
     out_dictionary = {}  # Dict<category, Dictionary<objectName, Material[]>>    ?? is the material array necessary?? idk
 
     # Initalize categories in dictionary
@@ -546,6 +546,23 @@ def get_mapped_materials_sable(data: Sequence[bpy.types.PropertyGroup], material
 
         mat_name = item.mat.name
         mat_name_lower = mat_name.lower()
+
+        # check to see if this material should be apart of a new seperate material, if so, put the material into its own named category
+        found = False
+        for seperateMaterialName in seperateMaterials:
+            print("Seperate material: " + seperateMaterialName)
+            if mat_name_lower.startswith(seperateMaterialName.lower()):
+                if seperateMaterialName not in out_dictionary:
+                    out_dictionary[seperateMaterialName] = {}
+                
+                if item.ob.name not in out_dictionary[seperateMaterialName]:
+                    out_dictionary[seperateMaterialName][item.ob.name] = []
+                    out_dictionary[seperateMaterialName][item.ob.name].append(item.mat)
+                
+                found = True
+
+        if found:
+            continue
 
         # find what category this material is a part of, if not found, it is automatically put into the unlisted 'Outfit' category
         found = False
@@ -771,5 +788,57 @@ def align_uvs_sable(scn: Scene, data: Structure, temp_atlas_name: str, atlas_siz
             uv_y = (reset_y - item['gfx']['fit']['y']) / size_height
 
             uv.x = uv_x * scaled_width
-            uv.y = uv_y * scaled_height + 1  
+            uv.y = uv_y * scaled_height + 1
+
+def clear_mats_sable(scn: Scene, mats_uv: MatsUV, seperateMaterials: List) -> None:
+    for ob_n, item in mats_uv.items():
+        ob = scn.objects[ob_n]
+        for mat in item:
+            mat_name = mat.name
+            mat_name_lower = mat_name.lower()
+
+            found = False
+            for seperateMaterialName in seperateMaterials:
+                print("Seperate material: " + seperateMaterialName)
+                if mat_name_lower.startswith(seperateMaterialName.lower()):
+                    found = True
+
+            if found:
+                continue
+
+            _delete_material(ob, mat.name)
+
+def organize_materials_sable(scn: Scene) -> None:
+    # Sort materials based off name
+    for item in scn.smc_ob_data:
+        if item.type != globs.CL_OBJECT:
+            continue
+
+        materialInfo = [] # fill with tuples (material name, material index, material)
+        # Get material info            
+        for m in item.ob.material_slots:
+            materialInfo.append((m.name, m.slot_index, m.material))
+            #print("Found End material: " + m.name + " index: " + str(m.slot_index))
+
+        # Sort based off name
+        materialInfo.sort(key = lambda matInfo : matInfo[0])
+
+        # Map old indexes, to new index [oldIndex : newIndex]
+        oldIndexToNewIndex = [None] * len(materialInfo)
+        for i in range(len(materialInfo)):
+            mInfo = materialInfo[i]
+            oldIndexToNewIndex[mInfo[1]] = i
+            
+        # Set materials now
+        for i in range(len(materialInfo)):
+            item.ob.material_slots[i].material = materialInfo[i][2]
+
+        # Re-assign polys to new material
+        for idx, polys in get_polys(item.ob).items():            
+            for poly in polys:
+                poly.material_index = oldIndexToNewIndex[poly.material_index]        
+
+        #for i in range(len(oldIndexToNewIndex)):
+        #    print("Old Index: " + str(i) + " -> New Index: " + str(oldIndexToNewIndex[i]))
+
 ###
