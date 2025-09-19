@@ -185,6 +185,24 @@ def register() -> None:
         description='Create Transparents atlased texture',
         default=False,
     )
+    bpy.types.Scene.smc_sable_eyes_texture_name = StringProperty(
+        description='The name of the generated Eyes atlased texture',
+        default='',
+    )
+    bpy.types.Scene.smc_sable_create_eyes_texture = BoolProperty(
+        name='Create Eyes Texture',
+        description='Create Eyes atlased texture',
+        default=False,
+    )
+    bpy.types.Scene.smc_sable_HUDelements_texture_name = StringProperty(
+        description='The name of the generated HUD Elements atlased texture',
+        default='',
+    )
+    bpy.types.Scene.smc_sable_create_HUDelements_texture = BoolProperty(
+        name='Create HUD Elements Texture',
+        description='Create HUD Elements atlased texture',
+        default=False,
+    ) 
 
     bpy.types.Scene.smc_sable_merge_by_distance_weight = FloatProperty(
         name='Merge by Distance Weight',

@@ -95,8 +95,10 @@ class Combiner_Sable(bpy.types.Operator):
         , "Body" : ["Body", "Mouth", "Face", "EyebrowsEyelashes", "ToeNails", "FingerNails"]
         , "Hair" : ["Hair", "SableFerretEar", "SableEars", "SableTail"]
         , "Eye Reflections" : ["EyeReflections"]
-        , "Emissives" : ["Cellphone", "Emotes", "Eyes"]
+        , "Emissives" : ["Cellphone", "Emotes"]
         , "Transparents" : ["SunglassesLens", "Tears", "FacialTransparents", "Mess"]
+        , "Eyes" : ["Eyes"]
+        , "HUD Elements" : ["HUDElements"]
     }
 
     '''sableMaterialMap = {
@@ -138,6 +140,12 @@ class Combiner_Sable(bpy.types.Operator):
 
         if (type_name == "Transparents"):
             return str(scn.smc_sable_transparents_texture_name).strip()
+        
+        if (type_name == "Eyes"):
+            return str(scn.smc_sable_eyes_texture_name).strip()
+        
+        if (type_name == "HUD Elements"):
+            return str(scn.smc_sable_HUDelements_texture_name).strip()    
 
         return str(scn.smc_sable_outfit_texture_name).strip()
     
@@ -155,7 +163,13 @@ class Combiner_Sable(bpy.types.Operator):
             return scn.smc_sable_create_emissives_texture
         
         if (type_name == "Transparents"):
-            return scn.smc_sable_create_transparents_texture        
+            return scn.smc_sable_create_transparents_texture
+
+        if (type_name == "Eyes"):
+            return scn.smc_sable_create_eyes_texture
+        
+        if (type_name == "HUD Elements"):
+            return scn.smc_sable_create_HUDelements_texture
 
         return scn.smc_sable_create_outfit_texture        
 

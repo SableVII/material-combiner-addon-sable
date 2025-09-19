@@ -56,7 +56,7 @@ class BinPacker(object):
         node['right'] = {'x': node['x'] + w, 'y': node['y'], 'w': node['w'] - w, 'h': h}
         return node
 
-    def grow_node(self, w: int, h: int) -> Union[Dict, None]:
+    def grow_node(self, w: int, h: int) -> Union[Dict, None]:     
         can_grow_right = h <= self.root['h']
         can_grow_down = w <= self.root['w']
 
