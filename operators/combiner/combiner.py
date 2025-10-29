@@ -92,11 +92,11 @@ class Combiner_Sable(bpy.types.Operator):
 
     sableMaterialMap = {
         "Outfit" : ["HairClip"] # Forced Outfit Material names. Others types must not match against anything in this first before adding it to its type
-        , "Body" : ["Body", "Mouth", "Face", "EyebrowsEyelashes", "ToeNails", "FingerNails"]
-        , "Hair" : ["Hair", "SableFerretEar", "SableEars", "SableTail"]
+        , "Body" : ["Body", "Mouth", "Face", "Eyelashes", "ToeNails", "FingerNails"]
+        , "Hair" : ["Hair", "SableFerretEar", "SableEars", "SableTail", "Eyebrows"]
         , "Eye Reflections" : ["EyeReflections"]
         , "Emissives" : ["Cellphone", "Emotes"]
-        , "Transparents" : ["SunglassesLens", "Tears", "FacialTransparents", "Mess"]
+        , "Transparents" : ["SunglassesLens", "Tears", "FacialTransparents", "Mess", "TestHair"]
         , "Eyes" : ["Eyes"]
         , "HUD Elements" : ["HUDElements"]
     }
