@@ -2,7 +2,7 @@ import bpy
 from bpy.props import *
 
 from .combiner_ops import *
-from .packer import BinPacker
+from .packer import BinPacker, SableBinPacker
 from ... import globs
 
 
@@ -414,7 +414,12 @@ class Combiner_Sable(bpy.types.Operator):
                 continue
 
             structure = get_structure_sable(scn, current_materials, self.mats_uv)
-            fittedStructure = BinPacker(get_size_sable(scn, structure)).fit()
+            fittedStructure = SableBinPacker(get_size_sable(scn, structure)).fit()
+            #fittedStructure = None
+            #if current_category == "Outfit":
+            #    fittedStructure = SableBinPacker(get_size_sable(scn, structure)).fit()
+            #else:
+            #    fittedStructure = BinPacker(get_size_sable(scn, structure)).fit()
 
             size = get_atlas_size(fittedStructure)
             atlas_size = calculate_adjusted_size(scn, size)

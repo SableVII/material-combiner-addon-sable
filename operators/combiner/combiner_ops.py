@@ -634,6 +634,20 @@ def get_structure_sable(scn: Scene, data: dict, mats_uv: MatsUV) -> Structure:
             structure[root_mat]['uv'].extend(mats_uv[ob_n][mat])
     return structure
 
+def _size_sorting_sable(item: Sequence[StructureItem]) -> Tuple[int, int, int, Union[str, Diffuse, None]]:
+    gfx = item[1]['gfx']
+    size_x, size_y = gfx['size']
+
+    img_or_color = gfx['img_or_color']
+    name_or_color = None
+    if isinstance(img_or_color, tuple):
+        name_or_color = gfx['img_or_color']
+    elif isinstance(img_or_color, bpy.types.PackedFile):
+        name_or_color = img_or_color.id_data.name
+
+    # Sorts by size_y, then multiplied size, then size_x, then the name and color
+    return size_y, size_x * size_y, size_x, name_or_color
+
 
 def get_size_sable(scn: Scene, data: Structure) -> Dict:
     for mat, item in data.items():
@@ -651,7 +665,7 @@ def get_size_sable(scn: Scene, data: Structure) -> Dict:
         else:
             item['gfx']['size'] = (scn.smc_diffuse_size + scn.smc_gaps,) * 2
 
-    return OrderedDict(sorted(data.items(), key=_size_sorting, reverse=True))
+    return OrderedDict(sorted(data.items(), key=_size_sorting_sable, reverse=True))
 
 
 def _get_image_sable(mat: bpy.types.Material) -> Union[bpy.types.Image, None]:
