@@ -452,6 +452,80 @@ class Combiner_Sable(bpy.types.Operator):
         bpy.ops.mesh.sort_elements(type='MATERIAL')
         bpy.ops.mesh.select_all(action='DESELECT')
 
+        # Split mesh based off <> Vertex Groups if this is a Test Avatar
+        if fileIsTest:
+            #bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.object.mode_set(mode='OBJECT')
+            #bpy.ops.mesh.select_mode(type="VERT")        
+            splitVertexGroupNamesAndIndexes = [] # (name, index)
+            groupIndexToVertexGroupName = {}
+            startingExistingMeshes = []
+            finishedMeshes = []
+            for obj in scn.objects:
+                # Ignore objects that are in the file but not really in the scene
+                if obj.name not in scn.objects:
+                    continue
+
+                if obj.type != "MESH":
+                    continue
+
+                startingExistingMeshes.append(obj)
+                finishedMeshes.append(obj)
+
+            for obj in startingExistingMeshes:
+                bpy.ops.object.mode_set(mode='OBJECT')            
+                bpy.context.view_layer.objects.active = obj        
+
+                vertexGroups = obj.vertex_groups
+                for i in range(len(vertexGroups)):
+                    vg = vertexGroups[i]
+                    vgName = vg.name.strip()
+                    if vgName.startswith("<") or vgName.endswith(">"):
+                        splitVertexGroupNamesAndIndexes.append((vgName, i))
+                        groupIndexToVertexGroupName[i] = vgName
+                        #print("Adding Split Vertex Group Name: (" + vg.name + ", " + str(i) + ")")
+
+                for vertexGroupIndex in groupIndexToVertexGroupName.keys():
+                    vgName = groupIndexToVertexGroupName[vertexGroupIndex]
+                    #print("Got Keyed thingy: (" + vgName+ ", " + str(vertexGroupIndex) + ")")
+
+                    selectedAtLeastOne = False
+                    #for i in range(len(obj.data.vertices)):
+                    #    v = obj.data.vertices[i]
+                    for v in obj.data.vertices:
+                        for vg in v.groups:
+                            if vg.group == vertexGroupIndex:
+                                v.select = True
+                                #print("MEOW!!: " + str(vg.group) + " Selected: " + str(obj.data.vertices[i].select))
+                                selectedAtLeastOne = True
+                                break
+
+                    if not selectedAtLeastOne:
+                        continue
+
+                    bpy.ops.object.mode_set(mode='EDIT')
+                    bpy.ops.mesh.select_mode(type="VERT")   
+
+                    bpy.ops.mesh.separate(type = 'SELECTED')
+
+                    # Grab new mesh, and rename
+                    for oobj in scn.objects:
+                        # Ignore objects that are in the file but not really in the scene
+                        if oobj.name not in scn.objects:
+                            continue
+
+                        if oobj.type != "MESH":
+                            continue
+
+                        if oobj not in finishedMeshes:
+                            oobj.name = vgName[1:-1]
+
+                            finishedMeshes.append(oobj)
+
+
+                    bpy.ops.object.mode_set(mode='OBJECT')
+
+
         if errors:
             self.report({'ERROR'}, errors)
         else:
